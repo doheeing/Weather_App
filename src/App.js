@@ -4,6 +4,8 @@ import Button from "react-bootstrap/Button";
 import "bootstrap/dist/css/bootstrap.min.css";
 import WeatherBox from "./component/WeatherBox";
 import WeatherButton from "./component/WeatherButton";
+import ClipLoader from "react-spinners/ClipLoader";
+// import Background from "./component/Background";
 
 // 1. 앱이 실행되자 마자 현재 위치 기반의 날씨 정보가 보인다
 // 2. 날씨 정보에는 도시, 섭씨, 화씨 날씨 상태정보가 들어감
@@ -14,6 +16,10 @@ import WeatherButton from "./component/WeatherButton";
 
 function App() {
   const [weather, setWeather] = useState(null);
+  const [city, setCity] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [apiError, setAPIError] = useState("");
+  const cities = ["paris", "new york", "tokyo", "seoul"];
   const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
       let lat = position.coords.latitude;
@@ -24,30 +30,64 @@ function App() {
   };
 
   const getWeatherCurrnetLocation = async (lat, lon) => {
-    let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&lang=kr&appid=70f81e7736ec6f2ffeb49b334772de55&units=metric`;
+    let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=70f81e7736ec6f2ffeb49b334772de55&units=metric`;
+    setLoading(true);
     let response = await fetch(url);
     let data = await response.json();
     setWeather(data);
+    setLoading(false);
   };
-  const changeLocation =async (location) => {
-    console.log("jeju")
-    let url = `https://api.openweathermap.org/data/2.5/weather?lat=33.5089580544693&lon=126.50214948318258&appid=70f81e7736ec6f2ffeb49b334772de55&units=metric`;
+
+  const getWeatherByCity = async () => {
+    let url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=70f81e7736ec6f2ffeb49b334772de55&units=metric`;
+    setLoading(true);
     let response = await fetch(url);
     let data = await response.json();
+    console.log("Data", data);
     setWeather(data);
+    setLoading(false);
   };
 
-
+  const handleCityChange = (city) => {
+    if (city === "current") {
+      getCurrentLocation();
+    } else {
+      setCity(city);
+    }
+  };
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    if (city == "") {
+      getCurrentLocation();
+    } else {
+      getWeatherByCity();
+    }
+  }, [city]);
+
+  // 아래 처럼 하면 지금 기존 초기 값이 ""빈 array이기 때문에 에러가 남
+  // useEffect(() => {
+  //   getWeatherByCity();
+  // }, [city]);
 
   return (
     <div>
-      <div className="container">
-        <WeatherBox weather={weather} />
-        <WeatherButton />
+      <div>
+        {loading ? (
+          <div class="container">
+            <ClipLoader color="blue" size={150} loading={loading} />
+          </div>
+        ) : !apiError ? (
+          <div class="container">
+            <WeatherBox weather={weather} />
+            <WeatherButton
+              cities={cities}
+              handleCityChange={handleCityChange}
+              selectedCity={city}
+            />
+          </div>
+        ) : (
+          apiError
+        )}
       </div>
     </div>
   );
